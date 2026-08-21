@@ -1,10 +1,10 @@
 ---
 name: api-query
-description: "通用接口查询工具 - 调用各类平台开放接口发送 HTTP 请求并返回数据。支持 GET/POST/PUT/DELETE/PATCH 方法，支持 API Key 鉴权，支持预设配置和命令行动态传参。完美适配安卓 15/Termux/WorkBuddy 移动环境。关键词：接口查询、API查询、调用接口、发送请求、HTTP请求、接口测试"
-version: "1.1.0"
+description: "通用接口查询工具 - 调用各类平台开放接口发送 HTTP 请求并返回数据。支持 GET/POST/PUT/DELETE/PATCH 方法，支持 API Key 鉴权，支持预设配置和命令行动态传参。全平台适配：Android 15/Termux/WorkBuddy、Linux、macOS、Windows（原生+WSL+Git Bash）、iPhone（a-Shell）。关键词：接口查询、API查询、调用接口、发送请求、HTTP请求、接口测试"
+version: "1.2.0"
 author: "CodeBuddy AI"
 created: "2026-08-21"
-updated: "2026-08-21"
+updated: "2026-08-22"
 ---
 
 # 接口查询 Skill
@@ -19,24 +19,50 @@ updated: "2026-08-21"
 - 命令行临时传参查询任意接口
 - API Key 安全管理（存储/查看/删除）
 - 统一的错误码处理和响应格式化
-- **安卓 15 / Termux / WorkBuddy 移动环境完美适配**
+- **全平台适配**（Android / Linux / macOS / Windows / iPhone）
 
-## 移动端适配说明（Android 15 / 小米 CV 4 Pro）
+## 跨平台支持矩阵（v1.2.0+）
 
-本 skill 已针对安卓 15 移动环境做完整适配，**无需 root、无需修改系统、无需安装额外工具**：
+提供**两套功能等价的脚本**，按平台选择：
+
+| 平台 | 查询脚本 | 密钥管理 | 说明 |
+|------|---------|---------|------|
+| **Android**（Termux/WorkBuddy，安卓 15） | `query_api.sh` | `set_key.sh` | bash 版，toybox 兼容 |
+| **Linux**（服务器/桌面） | `query_api.sh` | `set_key.sh` | bash 版，开箱即用 |
+| **macOS**（Intel/Apple Silicon） | `query_api.sh` | `set_key.sh` | bash 3.2 兼容（无需装新版 bash） |
+| **Windows - WSL / Git Bash** | `query_api.sh` | `set_key.sh` | bash 版，WSL/Git for Windows 自带环境 |
+| **Windows 原生**（PowerShell/CMD） | `python query_api.py` | `python set_key.py` | Python 3.6+，无需 bash |
+| **iPhone**（a-Shell 等） | `python3 query_api.py` | `python3 set_key.py` | App Store 装 a-Shell 即可用 |
+
+**依赖要求：**
+- bash 版：`bash 3.2+` + `curl` + `python3`（Android Termux: `pkg install curl python`）
+- Python 版：仅 `Python 3.6+`（标准库，零第三方依赖）——Windows/iPhone 推荐此版
+
+**快速调用示例：**
+```bash
+# Linux / macOS / Android / WSL / Git Bash
+<skill-directory>/scripts/query_api.sh --preset weather
+
+# Windows 原生（PowerShell 或 CMD）
+python <skill-directory>\scripts\query_api.py --preset weather
+
+# iPhone（a-Shell）
+python3 ~/skills/api-query/scripts/query_api.py --preset weather
+```
+
+## 跨平台适配细节
 
 | 适配项 | 说明 |
 |--------|------|
-| ANSI 颜色自动禁用 | 非交互环境（App 子进程/管道）自动禁用颜色码，避免乱码 |
-| HOME 兜底 | 安卓执行上下文 HOME 为空时自动回退到 Termux 标准路径 |
-| stat 跨平台 | 依次尝试 GNU stat → BSD/toybox stat → ls+awk 兜底，安卓 toybox 兼容 |
+| bash 3.2 兼容（macOS） | 不使用关联数组等 bash 4+ 特性，macOS 自带 bash 直接跑 |
+| ANSI 颜色自动禁用 | 非交互环境（管道/App 子进程）自动禁色，避免乱码 |
+| HOME 兜底 | 安卓执行上下文 HOME 为空时自动回退 Termux 标准路径 |
+| stat 跨平台 | GNU stat → BSD/toybox stat → ls+awk 三级降级 |
 | sed -i 跨平台 | `sed -i''` 优先，GNU/BusyBox/BSD sed 全兼容 |
-| 依赖检测 | curl/python3 缺失时给出 Termux 安装指引（pkg install），不自动安装 |
+| Python 版零依赖 | 纯标准库（urllib/ssl/argparse），Windows/iPhone 免安装 |
+| Windows 权限处理 | POSIX 600 权限在 Windows 上自动跳过（NTFS ACL 自行管理） |
+| 依赖检测 | 缺 curl/python3 时给出各平台安装指引，不自动安装 |
 | 非交互保护 | purge 等交互操作在非交互环境自动拒绝，防止误删 |
-| read_key 加固 | grep 无匹配返回非零时用 `\|\| true` 保护，set -e 不中断 |
-| f-string 修复 | 移除嵌套转义引号，兼容低版本 Python |
-
-**依赖要求：** 仅需 `curl` + `python3`（Termux: `pkg install curl python`；WorkBuddy 沙箱预装）。
 
 ## When to Use
 
@@ -60,27 +86,33 @@ updated: "2026-08-21"
 |------|------|
 | CodeBuddy（云端沙箱） | `~/.codebuddy/skills/api-query` |
 | WorkBuddy（移动端） | `~/.workbuddy/skills/api-query` |
+| 通用 skills CLI 安装 | `~/.agents/skills/api-query` |
+| 手动安装（任意平台） | 自行 clone/复制的目录 |
 
-脚本内部通过 `SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"` 自动定位，无需手动指定。
+脚本内部自动定位自身目录（bash 用 `BASH_SOURCE`，Python 用 `__file__`），无需手动指定。
 
 所有脚本路径基于此目录：
-- 核心查询脚本：`<skill-directory>/scripts/query_api.sh`
-- 密钥管理脚本：`<skill-directory>/scripts/set_key.sh`
+- 核心查询脚本（bash）：`<skill-directory>/scripts/query_api.sh`
+- 核心查询脚本（Python）：`<skill-directory>/scripts/query_api.py`
+- 密钥管理（bash）：`<skill-directory>/scripts/set_key.sh`
+- 密钥管理（Python）：`<skill-directory>/scripts/set_key.py`
 - 预设配置文件：`<skill-directory>/scripts/config.json`
-- 密钥存储位置：`~/.api_keys/.env`（权限 600，禁止提交）
+- 密钥存储位置：`~/.api_keys/.env`（POSIX 权限 600，禁止提交）
 
 ## 安全警告
 
 > **⚠️ 密钥安全是第一优先级**
 
 1. **`config.json` 只存接口元信息**，严禁填写真实密钥。需要鉴权的接口，在 headers 或 params 的值中用 `{env:VAR_NAME}` 引用环境变量。
-2. **密钥文件 `~/.api_keys/.env`** 由 `set_key.sh` 创建，权限强制为 `600`（仅当前用户可读写），禁止其他用户读取。
+2. **密钥文件 `~/.api_keys/.env`** 由 `set_key.sh` / `set_key.py` 创建，权限强制为 `600`（仅当前用户可读写，Windows 上交由 NTFS ACL），禁止其他用户读取。
 3. **`.gitignore`** 已配置忽略 `.api_keys/.env` 和所有 `.env` 文件，防止密钥被提交到版本库。
 4. **日志脱敏**：脚本输出日志时自动脱敏，绝不打印完整 API-Key，只显示前4位 + `****`。
 
 ## 脚本使用
 
-### 1. 密钥管理（set_key.sh）
+> 💡 **Windows 原生 / iPhone 用户**：把下文所有命令中的 `query_api.sh` 换成 `python query_api.py`、`set_key.sh` 换成 `python set_key.py`，参数完全一致。
+
+### 1. 密钥管理（set_key.sh / set_key.py）
 
 ```bash
 # 设置/更新 API Key
@@ -110,7 +142,7 @@ updated: "2026-08-21"
 
 **KEY_NAME 格式规则：** 大写字母开头，仅含大写字母/数字/下划线（如 `GITHUB_API_KEY`、`OPENWEATHER_KEY`）。
 
-### 2. 接口查询（query_api.sh）
+### 2. 接口查询（query_api.sh / query_api.py）
 
 #### 命令行参数
 
