@@ -1,0 +1,141 @@
+{
+  "_README": "此文件只存放接口元信息（URL/method/headers结构/params），严禁填写真实密钥。需要鉴权的接口，在 headers 或 params 的值中用 {env:VAR_NAME} 引用环境变量，密钥通过 set_key.sh 管理。",
+
+  "weather": {
+    "desc": "Open-Meteo 免费天气预报（无需 API Key）",
+    "url": "https://api.open-meteo.com/v1/forecast",
+    "method": "GET",
+    "params": {
+      "latitude": "39.9",
+      "longitude": "116.4",
+      "current": "temperature_2m,wind_speed_10m",
+      "timezone": "Asia/Shanghai"
+    }
+  },
+
+  "github": {
+    "desc": "GitHub REST API（需要 Personal Access Token）",
+    "url": "https://api.github.com",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {env:GITHUB_API_KEY}",
+      "Accept": "application/vnd.github+json"
+    }
+  },
+
+  "github_repo": {
+    "desc": "GitHub 查询指定仓库信息（URL 中 {owner}/{repo} 需命令行覆盖）",
+    "url": "https://api.github.com/repos/{owner}/{repo}",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {env:GITHUB_API_KEY}",
+      "Accept": "application/vnd.github+json"
+    }
+  },
+
+  "openweather": {
+    "desc": "OpenWeatherMap 天气查询（需要 API Key）",
+    "url": "https://api.openweathermap.org/data/2.5/weather",
+    "method": "GET",
+    "params": {
+      "q": "Beijing",
+      "appid": "{env:OPENWEATHER_KEY}",
+      "units": "metric",
+      "lang": "zh_cn"
+    }
+  },
+
+  "exchangerate": {
+    "desc": "汇率查询（open.er-api.com，免费无需 Key）",
+    "url": "https://open.er-api.com/v6/latest/USD",
+    "method": "GET"
+  },
+
+  "news": {
+    "desc": "NewsAPI 新闻查询（需要 API Key）",
+    "url": "https://newsapi.org/v2/top-headlines",
+    "method": "GET",
+    "params": {
+      "country": "cn",
+      "apiKey": "{env:NEWS_API_KEY}",
+      "pageSize": "10"
+    }
+  },
+
+  "ipinfo": {
+    "desc": "IP 信息查询（ipinfo.io，免费额度内无需 Key）",
+    "url": "https://ipinfo.io/json",
+    "method": "GET"
+  },
+
+  "httpbin_get": {
+    "desc": "httpbin.org GET 测试接口（用于验证脚本是否正常）",
+    "url": "https://httpbin.org/get",
+    "method": "GET"
+  },
+
+  "httpbin_post": {
+    "desc": "httpbin.org POST 测试接口（用于测试 POST 请求）",
+    "url": "https://httpbin.org/post",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  },
+
+  "deepseek_chat": {
+    "desc": "DeepSeek Chat Completions（需要 API Key）",
+    "url": "https://api.deepseek.com/chat/completions",
+    "method": "POST",
+    "headers": {
+      "Authorization": "Bearer {env:DEEPSEEK_API_KEY}",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "model": "deepseek-chat",
+      "messages": [
+        {"role": "user", "content": "你好"}
+      ]
+    }
+  },
+
+  "deepseek_balance": {
+    "desc": "DeepSeek 查询余额（需要 API Key）",
+    "url": "https://api.deepseek.com/user/balance",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {env:DEEPSEEK_API_KEY}"
+    }
+  },
+
+  "amap_geocode": {
+    "desc": "高德地图地理编码（需要 Web 服务 Key）",
+    "url": "https://restapi.amap.com/v3/geocode/geo",
+    "method": "GET",
+    "params": {
+      "address": "北京市朝阳区",
+      "key": "{env:AMAP_API_KEY}"
+    }
+  },
+
+  "amap_weather": {
+    "desc": "高德天气查询（city 传区县 adcode，如 110108 海淀；extensions=base 实况 / all 预报；需要 Web Key）",
+    "url": "https://restapi.amap.com/v3/weather/weatherInfo",
+    "method": "GET",
+    "params": {
+      "city": "110108",
+      "key": "{env:AMAP_API_KEY}",
+      "extensions": "base"
+    }
+  },
+
+  "tianapi_joke": {
+    "desc": "天行 API 笑话接口（需要 Key）",
+    "url": "https://apis.tianapi.com/joke/index",
+    "method": "GET",
+    "params": {
+      "key": "{env:TIANAPI_KEY}",
+      "num": "5"
+    }
+  }
+}
