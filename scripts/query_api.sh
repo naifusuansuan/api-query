@@ -2,6 +2,9 @@
 #==============================================================================
 # query_api.sh — 通用接口查询脚本
 #
+# 平台支持：Linux / macOS（bash 3.2+）/ Windows(WSL/Git Bash) / Android(Termux)
+# （Windows 原生 / iPhone 请用功能等价的 query_api.py）
+#
 # 功能：通过预设配置或命令行参数发送 HTTP 请求，返回响应数据
 # 优先级：命令行参数 > 环境变量 > config.json 预设配置
 #
@@ -346,17 +349,18 @@ fi
 # 同时支持拆分 "k=v&k2=v2" 形式的多参数。
 
 # Query 参数去重：同名 key 命令行优先
-declare -A SEEN_QUERY_KEYS=()
+# 注：不使用 declare -A 关联数组（macOS 自带 bash 3.2 不支持），用字符串匹配保证跨平台
+SEEN_QUERY_KEYS=""
 DEDUPED_QUERY=()
 for q in "${QUERY_PARAMS[@]}"; do
     IFS='&' read -ra _pairs <<< "$q"
     for pair in "${_pairs[@]}"; do
         [[ -n "$pair" ]] || continue
         _k="${pair%%=*}"
-        if [[ -z "${SEEN_QUERY_KEYS[$_k]:-}" ]]; then
-            SEEN_QUERY_KEYS["$_k"]=1
-            DEDUPED_QUERY+=("$pair")
-        fi
+        case ",${SEEN_QUERY_KEYS}," in
+            *",${_k},"*) ;;  # 已存在，跳过（后出现的丢弃）
+            *) SEEN_QUERY_KEYS="${_k},${SEEN_QUERY_KEYS}"; DEDUPED_QUERY+=("$pair") ;;
+        esac
     done
 done
 if [[ ${#DEDUPED_QUERY[@]} -gt 0 ]]; then
@@ -366,15 +370,16 @@ else
 fi
 
 # Header 去重：同名 header（名称大小写不敏感）命令行优先
-declare -A SEEN_HDR_KEYS=()
+# 注：不使用 declare -A 关联数组（macOS 自带 bash 3.2 不支持）
+SEEN_HDR_KEYS=""
 DEDUPED_HEADERS=()
 for h in "${HEADERS[@]}"; do
     _hk="$(echo "${h%%:*}" | tr '[:upper:]' '[:lower:]')"
     _hk="${_hk//[[:space:]]/}"
-    if [[ -z "${SEEN_HDR_KEYS[$_hk]:-}" ]]; then
-        SEEN_HDR_KEYS["$_hk"]=1
-        DEDUPED_HEADERS+=("$h")
-    fi
+    case ",${SEEN_HDR_KEYS}," in
+        *",${_hk},"*) ;;  # 已存在，跳过
+        *) SEEN_HDR_KEYS="${_hk},${SEEN_HDR_KEYS}"; DEDUPED_HEADERS+=("$h") ;;
+    esac
 done
 if [[ ${#DEDUPED_HEADERS[@]} -gt 0 ]]; then
     HEADERS=("${DEDUPED_HEADERS[@]}")
