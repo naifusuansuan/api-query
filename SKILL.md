@@ -1,7 +1,7 @@
 ---
 name: api-query
 description: "通用接口查询工具 - 调用各类平台开放接口发送 HTTP 请求并返回数据。支持 GET/POST/PUT/DELETE/PATCH 方法，支持 API Key 鉴权，支持预设配置和命令行动态传参。内置快递100 快递单号轨迹查询（自动识别快递公司）。全平台适配：Android 15/Termux/WorkBuddy、Linux、macOS、Windows（原生+WSL+Git Bash）、iPhone（a-Shell）。关键词：接口查询、API查询、调用接口、发送请求、HTTP请求、接口测试、快递查询、查快递、快递单号、物流轨迹"
-version: "1.3.0"
+version: "1.3.1"
 author: "CodeBuddy AI"
 created: "2026-08-21"
 updated: "2026-08-22"
@@ -253,6 +253,7 @@ python <skill-directory>\scripts\set_key.py set KUAIDI100_KEY      <你的授权
 - 同一单号查询频率请间隔 **30 分钟以上**，否则可能被锁单
 - 顺丰速运、顺丰快运、中通快递查询**必填**收/寄件人手机号（后4位即可）
 - 错误码自动翻译为中文提示（如 503 签名失败、601 Key 过期等）
+- **免费降级通道（v1.3.1+）**：官方 API 返回 401（免费账号不支持顺丰/申通等）时，脚本**自动切换快递100 网页免费通道**（无需密钥，覆盖全部快递公司）。网页通道有频率限制：同一单号短时间重复查询会返回「查无结果」，间隔 1-2 分钟再查即可。
 
 ## 示例
 

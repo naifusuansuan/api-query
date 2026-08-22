@@ -99,6 +99,47 @@ except Exception:
     fi
 }
 
+# ─── 网页免费通道（官方 API 返回 401 时自动降级）─────────────────────────
+# 原理：快递100 网页版对个人免费开放全部快递公司（含顺丰/申通），
+#       走 m.kuaidi100.com 的网页查询接口，无需任何密钥。
+# 注意：网页通道有频率限制（同一单号短时间重复查询会返回"查无结果"，
+#       间隔几分钟再查即可）。
+
+UA_WEB="Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/126.0 Mobile Safari/537.36"
+
+# 网页版单号识别（返回网页版公司编码，如 shunfeng）
+web_detect_com() {
+    local num="$1"
+    local resp
+    resp="$(curl -s --max-time 15 -X POST \
+        "https://www.kuaidi100.com/autonumber/autoComNum?text=${num}" \
+        -H "User-Agent: ${UA_WEB}" \
+        -H "Referer: https://www.kuaidi100.com/")" || return 1
+    if command -v python3 >/dev/null 2>&1; then
+        printf '%s' "$resp" | python3 -c "
+import json,sys
+try:
+    data = json.load(sys.stdin)
+    for item in (data.get('auto') or []):
+        print(item.get('comCode','')); break
+except Exception:
+    pass
+" 2>/dev/null
+    else
+        printf '%s' "$resp" | grep -o '"comCode":"[^"]*"' | head -1 | sed 's/"comCode":"//; s/"//'
+    fi
+}
+
+# 网页版轨迹查询（无需密钥）
+web_query() {
+    local num="$1" com="$2" phone="${3:-}"
+    curl -s --max-time 20 -X POST "https://m.kuaidi100.com/query" \
+        -H "User-Agent: ${UA_WEB}" \
+        -H "Referer: https://m.kuaidi100.com/result.jsp" \
+        -H "Content-Type: application/x-www-form-urlencoded" \
+        --data "postid=${num}&id=1&valicode=&temp=0.${RANDOM}${RANDOM}&type=${com}&phone=${phone}"
+}
+
 # ─── 结果美化输出 ─────────────────────────────────────────────────────────
 format_result() {
     if command -v python3 >/dev/null 2>&1; then
@@ -129,11 +170,16 @@ except Exception:
     sys.exit(0)
 
 if data.get("status") == "200" or "data" in data:
+    tracks = data.get("data") or []
+    # 网页通道限流占位响应：data 仅一条且内容为"查无结果"
+    if len(tracks) == 1 and "查无结果" in (tracks[0].get("context") or ""):
+        print("查询返回「查无结果」——通常为网页通道频率限制（同一单号短时间只能查一次），")
+        print("请间隔 1-2 分钟后重试；也请确认单号正确且已发货。")
+        sys.exit(1)
     state = STATE_MAP.get(str(data.get("state", "?")), data.get("state", "?"))
     print("快递公司: {}    单号: {}".format(data.get("com", "?"), data.get("nu", "?")))
     print("当前状态: {}".format(state))
     print("─" * 52)
-    tracks = data.get("data") or []
     for i, t in enumerate(tracks):
         mark = "●最新" if i == 0 else "      "
         status = t.get("status", "")
@@ -244,6 +290,21 @@ RESP="$(curl -s --max-time 30 -X POST \
     log_error "请求失败，请检查网络连接"
     exit 1
 }
+
+# ─── 官方 API 通道受限（401）时，自动切换网页免费通道 ─────────────────────
+if printf '%s' "$RESP" | grep -q '"returnCode":"401"'; then
+    log_warn "官方 API 不支持此快递公司（免费账号对顺丰/申通等常见），切换网页免费通道..."
+    WEBCOM="$(web_detect_com "$NUM")"
+    if [[ -z "$WEBCOM" ]]; then
+        WEBCOM="$COM"
+    fi
+    log_info "网页通道识别公司编码: ${WEBCOM}"
+    RESP="$(web_query "$NUM" "$WEBCOM" "$PHONE")"
+    if [[ -z "$RESP" ]]; then
+        log_error "网页通道请求失败，请检查网络后重试"
+        exit 1
+    fi
+fi
 
 if [[ -z "$RESP" ]]; then
     log_error "接口返回为空，请稍后重试"

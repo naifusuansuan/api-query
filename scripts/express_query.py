@@ -105,6 +105,53 @@ def detect_com(num, key):
     return ""
 
 
+# ─── 网页免费通道（官方 API 返回 401 时自动降级）─────────────────────────
+# 快递100 网页版对个人免费开放全部快递公司（含顺丰/申通），无需任何密钥。
+# 注意：网页通道有频率限制（同一单号短时间重复查询会返回"查无结果"）。
+
+UA_WEB = ("Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 "
+          "Chrome/126.0 Mobile Safari/537.36")
+
+WEB_DETECT_URL = "https://www.kuaidi100.com/autonumber/autoComNum"
+WEB_QUERY_URL = "https://m.kuaidi100.com/query"
+
+
+def http_post_web(url, data, timeout=20):
+    """网页通道 POST（带浏览器 UA）"""
+    body = urllib.parse.urlencode(data).encode("utf-8")
+    req = urllib.request.Request(url, data=body, method="POST")
+    req.add_header("User-Agent", UA_WEB)
+    req.add_header("Referer", "https://m.kuaidi100.com/result.jsp")
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read().decode("utf-8", errors="replace")
+
+
+def web_detect_com(num):
+    """网页版单号识别（返回网页版公司编码，如 shunfeng）"""
+    try:
+        req = urllib.request.Request(
+            WEB_DETECT_URL + "?text=" + urllib.parse.quote(num), method="POST")
+        req.add_header("User-Agent", UA_WEB)
+        req.add_header("Referer", "https://www.kuaidi100.com/")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8", errors="replace"))
+        for item in (data.get("auto") or []):
+            return item.get("comCode", "")
+    except Exception:
+        pass
+    return ""
+
+
+def web_query(num, com, phone=""):
+    """网页版轨迹查询（无需密钥）"""
+    import random
+    return http_post_web(WEB_QUERY_URL, {
+        "postid": num, "id": "1", "valicode": "",
+        "temp": random.random(), "type": com, "phone": phone,
+    })
+
+
 def format_result(raw):
     """解析查询结果，人类可读输出"""
     try:
@@ -114,11 +161,17 @@ def format_result(raw):
         return 1
 
     if data.get("status") == "200" or "data" in data:
+        tracks = data.get("data") or []
+        # 网页通道限流占位响应：data 仅一条且内容为"查无结果"
+        if len(tracks) == 1 and "查无结果" in (tracks[0].get("context") or ""):
+            print("查询返回「查无结果」——通常为网页通道频率限制（同一单号短时间只能查一次），")
+            print("请间隔 1-2 分钟后重试；也请确认单号正确且已发货。")
+            return 1
         state = STATE_MAP.get(str(data.get("state", "?")), str(data.get("state", "?")))
         print("快递公司: {}    单号: {}".format(data.get("com", "?"), data.get("nu", "?")))
         print("当前状态: {}".format(state))
         print("─" * 52)
-        for i, t in enumerate(data.get("data") or []):
+        for i, t in enumerate(tracks):
             mark = "●最新" if i == 0 else "      "
             print("{}  {}".format(mark, t.get("ftime") or t.get("time", "")))
             status = t.get("status", "")
@@ -193,6 +246,21 @@ def main():
     except Exception as e:
         print("[ERROR] 请求失败: {}".format(e))
         return 1
+
+    # ─── 官方 API 通道受限（401）时，自动切换网页免费通道 ─────────────────
+    try:
+        resp_json = json.loads(resp)
+    except Exception:
+        resp_json = {}
+    if str(resp_json.get("returnCode", "")) == "401":
+        print("[WARN]  官方 API 不支持此快递公司（免费账号对顺丰/申通等常见），切换网页免费通道...")
+        webcom = web_detect_com(num) or com
+        print("[INFO]  网页通道识别公司编码: {}".format(webcom))
+        try:
+            resp = web_query(num, webcom, phone)
+        except Exception as e:
+            print("[ERROR] 网页通道请求失败: {}".format(e))
+            return 1
 
     if not resp:
         print("[ERROR] 接口返回为空，请稍后重试")
