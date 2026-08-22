@@ -1,6 +1,5 @@
 {
   "_README": "此文件只存放接口元信息（URL/method/headers结构/params），严禁填写真实密钥。需要鉴权的接口，在 headers 或 params 的值中用 {env:VAR_NAME} 引用环境变量，密钥通过 set_key.sh 管理。",
-
   "weather": {
     "desc": "Open-Meteo 免费天气预报（无需 API Key）",
     "url": "https://api.open-meteo.com/v1/forecast",
@@ -12,7 +11,6 @@
       "timezone": "Asia/Shanghai"
     }
   },
-
   "github": {
     "desc": "GitHub REST API（需要 Personal Access Token）",
     "url": "https://api.github.com",
@@ -22,7 +20,6 @@
       "Accept": "application/vnd.github+json"
     }
   },
-
   "github_repo": {
     "desc": "GitHub 查询指定仓库信息（URL 中 {owner}/{repo} 需命令行覆盖）",
     "url": "https://api.github.com/repos/{owner}/{repo}",
@@ -32,7 +29,6 @@
       "Accept": "application/vnd.github+json"
     }
   },
-
   "openweather": {
     "desc": "OpenWeatherMap 天气查询（需要 API Key）",
     "url": "https://api.openweathermap.org/data/2.5/weather",
@@ -44,13 +40,11 @@
       "lang": "zh_cn"
     }
   },
-
   "exchangerate": {
     "desc": "汇率查询（open.er-api.com，免费无需 Key）",
     "url": "https://open.er-api.com/v6/latest/USD",
     "method": "GET"
   },
-
   "news": {
     "desc": "NewsAPI 新闻查询（需要 API Key）",
     "url": "https://newsapi.org/v2/top-headlines",
@@ -61,19 +55,16 @@
       "pageSize": "10"
     }
   },
-
   "ipinfo": {
     "desc": "IP 信息查询（ipinfo.io，免费额度内无需 Key）",
     "url": "https://ipinfo.io/json",
     "method": "GET"
   },
-
   "httpbin_get": {
     "desc": "httpbin.org GET 测试接口（用于验证脚本是否正常）",
     "url": "https://httpbin.org/get",
     "method": "GET"
   },
-
   "httpbin_post": {
     "desc": "httpbin.org POST 测试接口（用于测试 POST 请求）",
     "url": "https://httpbin.org/post",
@@ -82,7 +73,6 @@
       "Content-Type": "application/json"
     }
   },
-
   "deepseek_chat": {
     "desc": "DeepSeek Chat Completions（需要 API Key）",
     "url": "https://api.deepseek.com/chat/completions",
@@ -94,11 +84,13 @@
     "body": {
       "model": "deepseek-chat",
       "messages": [
-        {"role": "user", "content": "你好"}
+        {
+          "role": "user",
+          "content": "你好"
+        }
       ]
     }
   },
-
   "deepseek_balance": {
     "desc": "DeepSeek 查询余额（需要 API Key）",
     "url": "https://api.deepseek.com/user/balance",
@@ -107,7 +99,6 @@
       "Authorization": "Bearer {env:DEEPSEEK_API_KEY}"
     }
   },
-
   "amap_geocode": {
     "desc": "高德地图地理编码（需要 Web 服务 Key）",
     "url": "https://restapi.amap.com/v3/geocode/geo",
@@ -117,7 +108,6 @@
       "key": "{env:AMAP_API_KEY}"
     }
   },
-
   "amap_weather": {
     "desc": "高德天气查询（city 传区县 adcode，如 110108 海淀；extensions=base 实况 / all 预报；需要 Web Key）",
     "url": "https://restapi.amap.com/v3/weather/weatherInfo",
@@ -128,7 +118,6 @@
       "extensions": "base"
     }
   },
-
   "tianapi_joke": {
     "desc": "天行 API 笑话接口（需要 Key）",
     "url": "https://apis.tianapi.com/joke/index",
@@ -136,6 +125,30 @@
     "params": {
       "key": "{env:TIANAPI_KEY}",
       "num": "5"
+    }
+  },
+  "caiyun_realtime": {
+    "desc": "彩云天气实况（坐标用 {lng},{lat} 覆盖，如 121.255,31.375 上海嘉定；需 CAIYUN_TOKEN）",
+    "url": "https://api.caiyunapp.com/v2.6/{env:CAIYUN_TOKEN}/121.255,31.375/realtime",
+    "method": "GET"
+  },
+  "caiyun_hourly": {
+    "desc": "彩云天气逐小时预报（hourlysteps 最大48；需 CAIYUN_TOKEN；URL 坐标可覆盖）",
+    "url": "https://api.caiyunapp.com/v2.6/{env:CAIYUN_TOKEN}/121.255,31.375/hourly?hourlysteps=48",
+    "method": "GET"
+  },
+  "caiyun_daily": {
+    "desc": "彩云天气逐天预报+生活指数（dailysteps 最大3；需 CAIYUN_TOKEN；URL 坐标可覆盖）",
+    "url": "https://api.caiyunapp.com/v2.6/{env:CAIYUN_TOKEN}/121.255,31.375/daily?dailysteps=3",
+    "method": "GET"
+  },
+  "kuaidi100_autonumber": {
+    "desc": "快递100 智能单号识别（返回快递公司编码如 sf/yto/zto；需 KUAIDI100_KEY；轨迹查询请用专用脚本 express_query.sh，需 POST+MD5 动态签名不适合预设）",
+    "url": "https://extapi.kuaidi100.com/autonumber/auto",
+    "method": "GET",
+    "params": {
+      "num": "SF0210676942900",
+      "key": "{env:KUAIDI100_KEY}"
     }
   }
 }

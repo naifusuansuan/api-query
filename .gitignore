@@ -1,0 +1,10 @@
+# ─── API Key 密钥文件（敏感，禁止提交） ───
+# set_key.sh 生成和管理，权限 600，严禁上传 git
+.api_keys/.env
+*.env
+.env
+
+# ─── 临时/缓存文件 ───
+__pycache__/
+*.pyc
+.DS_Store

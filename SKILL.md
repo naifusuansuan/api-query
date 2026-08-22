@@ -1,7 +1,7 @@
 ---
 name: api-query
-description: "通用接口查询工具 - 调用各类平台开放接口发送 HTTP 请求并返回数据。支持 GET/POST/PUT/DELETE/PATCH 方法，支持 API Key 鉴权，支持预设配置和命令行动态传参。内置快递100 快递单号轨迹查询（自动识别快递公司）。全平台适配：Android 15/Termux/WorkBuddy、Linux、macOS、Windows（原生+WSL+Git Bash）、iPhone（a-Shell）。关键词：接口查询、API查询、调用接口、发送请求、HTTP请求、接口测试、快递查询、查快递、快递单号、物流轨迹"
-version: "1.3.1"
+description: "通用接口查询工具 - 调用各类平台开放接口发送 HTTP 请求并返回数据。支持 GET/POST/PUT/DELETE/PATCH 方法，支持 API Key 鉴权，支持预设配置和命令行动态传参。内置快递查询（快递100，轨迹+单号识别）和彩云天气（实况/小时/天预报+预警）专用脚本。全平台适配：Android 15/Termux/WorkBuddy、Linux、macOS、Windows（原生+WSL+Git Bash）、iPhone（a-Shell）。关键词：接口查询、API查询、调用接口、发送请求、HTTP请求、接口测试、快递查询、查快递、物流轨迹、天气查询、彩云天气"
+version: "1.4.0"
 author: "CodeBuddy AI"
 created: "2026-08-21"
 updated: "2026-08-22"
@@ -19,20 +19,22 @@ updated: "2026-08-22"
 - 命令行临时传参查询任意接口
 - API Key 安全管理（存储/查看/删除）
 - 统一的错误码处理和响应格式化
+- **快递查询**（v1.3.0）：快递100 轨迹查询、智能单号识别、免费网页通道降级
+- **天气报告**（v1.4.0）：彩云天气中文格式化报告（实况/逐小时降水/逐天/预警）
 - **全平台适配**（Android / Linux / macOS / Windows / iPhone）
 
-## 跨平台支持矩阵（v1.2.0+）
+## 跨平台支持矩阵（v1.3.0+，v1.4.0 增补）
 
 提供**两套功能等价的脚本**，按平台选择：
 
 | 平台 | 查询脚本 | 密钥管理 | 说明 |
 |------|---------|---------|------|
-| **Android**（Termux/WorkBuddy，安卓 15） | `query_api.sh` / `express_query.sh` | `set_key.sh` | bash 版，toybox 兼容 |
-| **Linux**（服务器/桌面） | `query_api.sh` / `express_query.sh` | `set_key.sh` | bash 版，开箱即用 |
-| **macOS**（Intel/Apple Silicon） | `query_api.sh` / `express_query.sh` | `set_key.sh` | bash 3.2 兼容（无需装新版 bash） |
-| **Windows - WSL / Git Bash** | `query_api.sh` / `express_query.sh` | `set_key.sh` | bash 版，WSL/Git for Windows 自带环境 |
-| **Windows 原生**（PowerShell/CMD） | `python query_api.py` / `python express_query.py` | `python set_key.py` | Python 3.6+，无需 bash |
-| **iPhone**（a-Shell 等） | `python3 query_api.py` / `python3 express_query.py` | `python3 set_key.py` | App Store 装 a-Shell 即可用 |
+| **Android**（Termux/WorkBuddy，安卓 15） | `query_api.sh` | `set_key.sh` | bash 版，toybox 兼容 |
+| **Linux**（服务器/桌面） | `query_api.sh` | `set_key.sh` | bash 版，开箱即用 |
+| **macOS**（Intel/Apple Silicon） | `query_api.sh` | `set_key.sh` | bash 3.2 兼容（无需装新版 bash） |
+| **Windows - WSL / Git Bash** | `query_api.sh` | `set_key.sh` | bash 版，WSL/Git for Windows 自带环境 |
+| **Windows 原生**（PowerShell/CMD） | `python query_api.py` | `python set_key.py` | Python 3.6+，无需 bash |
+| **iPhone**（a-Shell 等） | `python3 query_api.py` | `python3 set_key.py` | App Store 装 a-Shell 即可用 |
 
 **依赖要求：**
 - bash 版：`bash 3.2+` + `curl` + `python3`（Android Termux: `pkg install curl python`）
@@ -69,9 +71,10 @@ python3 ~/skills/api-query/scripts/query_api.py --preset weather
 - 用户需要调用某个平台的开放 API 获取数据
 - 用户需要发送 HTTP 请求测试接口
 - 用户需要查询天气、汇率、IP 信息等公开 API
-- 用户需要查询快递单号物流轨迹（"查快递""快递到哪了""物流信息"）
 - 用户提到"调用接口""查 API""发请求""接口测试"等关键词
 - 用户需要配置 API Key 并用其访问需要鉴权的接口
+- 用户查快递：提到"快递单号""物流轨迹""到哪了""顺丰/圆通/中通"等 → `express_query.sh`
+- 用户查天气：提到"彩云""天气预报""几点下雨""降水"等 → `caiyun_weather.sh` 或 `caiyun_*` 预设
 
 ## When NOT to Use
 
@@ -95,11 +98,13 @@ python3 ~/skills/api-query/scripts/query_api.py --preset weather
 所有脚本路径基于此目录：
 - 核心查询脚本（bash）：`<skill-directory>/scripts/query_api.sh`
 - 核心查询脚本（Python）：`<skill-directory>/scripts/query_api.py`
-- 快递查询脚本（bash）：`<skill-directory>/scripts/express_query.sh`
-- 快递查询脚本（Python）：`<skill-directory>/scripts/express_query.py`
+- 快递查询（bash）：`<skill-directory>/scripts/express_query.sh`
+- 快递查询（Python）：`<skill-directory>/scripts/express_query.py`
+- 彩云天气报告（bash）：`<skill-directory>/scripts/caiyun_weather.sh`
 - 密钥管理（bash）：`<skill-directory>/scripts/set_key.sh`
 - 密钥管理（Python）：`<skill-directory>/scripts/set_key.py`
 - 预设配置文件：`<skill-directory>/scripts/config.json`
+- 预设速查表：`<skill-directory>/references/preset_apis.md`
 - 密钥存储位置：`~/.api_keys/.env`（POSIX 权限 600，禁止提交）
 
 ## 安全警告
@@ -204,56 +209,49 @@ python3 ~/skills/api-query/scripts/query_api.py --preset weather
 <skill-directory>/scripts/query_api.sh --preset weather --raw
 ```
 
-### 3. 快递查询（express_query.sh / express_query.py）— v1.3.0+
+### 3. 快递查询（express_query.sh / express_query.py，v1.3.0 新增）
 
-基于**快递100**开放平台的快递轨迹查询，支持 1200+ 国内外快递公司（顺丰/圆通/中通/申通/韵达/EMS/京东/德邦/极兔等），**自动识别单号所属快递公司**。
-
-> 因快递100 要求动态 MD5 签名（`sign = MD5(param + key + customer)`），无法用静态预设表达，故提供专用脚本，内部自动完成签名计算。
-
-#### 首次使用前（一次性配置）
-
-1. **注册**：https://api.kuaidi100.com/register（免费，个人可注册企业版）
-2. **取密钥**：登录后进入「企业管理后台 → 我的信息 → 企业信息」，复制 **Customer** 和 **授权 Key**
-3. **配置密钥**：
+依赖密钥（注册 https://api.kuaidi100.com/register 免费获取）：
+- `KUAIDI100_KEY`（授权 Key）
+- `KUAIDI100_CUSTOMER`（企业授权 Customer）
 
 ```bash
-# bash 版（Linux/macOS/Android/WSL）
-<skill-directory>/scripts/set_key.sh set KUAIDI100_CUSTOMER <你的Customer>
-<skill-directory>/scripts/set_key.sh set KUAIDI100_KEY      <你的授权Key>
+# 一次性配置密钥
+<skill-directory>/scripts/set_key.sh set KUAIDI100_KEY xxxxxx
+<skill-directory>/scripts/set_key.sh set KUAIDI100_CUSTOMER ABCDEF123
 
-# Python 版（Windows 原生/iPhone）
-python <skill-directory>\scripts\set_key.py set KUAIDI100_CUSTOMER <你的Customer>
-python <skill-directory>\scripts\set_key.py set KUAIDI100_KEY      <你的授权Key>
+# 查询轨迹
+<skill-directory>/scripts/express_query.sh <单号>                       # 自动识别快递公司
+<skill-directory>/scripts/express_query.sh <单号> <公司编码>             # 指定公司，如 sf/yto/zto
+<skill-directory>/scripts/express_query.sh <单号> <公司编码> <手机后4位>  # 顺丰/中通需手机号校验
+<skill-directory>/scripts/express_query.sh --com                        # 查看快递公司编码表
 ```
 
-#### 查询用法
+**特性：** 官方 API 查询（POST+MD5 动态签名）→ 401 时自动降级快递100 网页免费通道（无需密钥，含顺丰）；顺丰/中通首次查询需收/寄件人手机后4位；Windows 用 `python express_query.py`，参数一致。
+
+**轻量替代：** 只需识别单号属于哪家快递时，可用通用预设 `query_api.sh --preset kuaidi100_autonumber --query "num=单号"`（仅需 KUAIDI100_KEY）。
+
+### 4. 彩云天气报告（caiyun_weather.sh，v1.4.0 新增）
+
+依赖密钥（注册 https://platform.caiyunapp.com 免费获取，免费版 10000 次，QPS=1）：
+- `CAIYUN_TOKEN`
 
 ```bash
-# 自动识别快递公司（最常用，只填单号）
-<skill-directory>/scripts/express_query.sh YT25569986666541
+# 一次性配置密钥
+<skill-directory>/scripts/set_key.sh set CAIYUN_TOKEN xxxxxxxxxxxxxxxxxx
 
-# 指定快递公司编码（识别不准时）
-<skill-directory>/scripts/express_query.sh SF1356245698123 sf
-
-# 顺丰/中通需要手机号校验（收/寄件人手机后4位）
-<skill-directory>/scripts/express_query.sh SF1356245698123 sf 1234
-
-# 查看常用快递公司编码表
-<skill-directory>/scripts/express_query.sh --com
+# 中文格式化报告
+<skill-directory>/scripts/caiyun_weather.sh                    # 实况 + 未来48h/3天摘要（默认上海嘉定龙湖郦城）
+<skill-directory>/scripts/caiyun_weather.sh hourly             # 未来48小时逐小时（降水时段重点）
+<skill-directory>/scripts/caiyun_weather.sh daily              # 未来3天 + 紫外线/舒适度/穿衣指数
+<skill-directory>/scripts/caiyun_weather.sh alert              # 气象预警 + 走势要点
+<skill-directory>/scripts/caiyun_weather.sh all                # 一次全出（约6秒，受QPS=1限制）
+<skill-directory>/scripts/caiyun_weather.sh realtime 116.4,39.9  # 指定坐标（经度,纬度）
 ```
 
-输出为人类可读的物流轨迹（最新一条标注 `●最新`），包含公司、单号、当前状态（在途/派件/签收等）与完整轨迹时间线。
+**JSON 原始数据：** 用通用预设 `caiyun_realtime` / `caiyun_hourly` / `caiyun_daily`，URL 中坐标可覆盖。
 
-#### 常用快递公司编码
-
-`sf` 顺丰 · `yto` 圆通 · `zto` 中通 · `sto` 申通 · `yunda` 韵达 · `ems` EMS · `jd` 京东 · `deppon` 德邦 · `htky` 百世 · `jtexpress` 极兔（完整表：`--com` 或快递100 官网下载）
-
-#### 注意事项
-
-- 同一单号查询频率请间隔 **30 分钟以上**，否则可能被锁单
-- 顺丰速运、顺丰快运、中通快递查询**必填**收/寄件人手机号（后4位即可）
-- 错误码自动翻译为中文提示（如 503 签名失败、601 Key 过期等）
-- **免费降级通道（v1.3.1+）**：官方 API 返回 401（免费账号不支持顺丰/申通等）时，脚本**自动切换快递100 网页免费通道**（无需密钥，覆盖全部快递公司）。网页通道有频率限制：同一单号短时间重复查询会返回「查无结果」，间隔 1-2 分钟再查即可。
+**彩云 API 要点：** 坐标**经度在前**（lng,lat）；免费版 QPS=1（连续请求需间隔 >1s）；分钟级降水未开放；预警走 `weather?alert=true` 综合接口（独立 /alert 端点免费版 404）；降水概率是 0-100 整数。
 
 ## 示例
 
@@ -315,19 +313,7 @@ python <skill-directory>\scripts\set_key.py set KUAIDI100_KEY      <你的授权
   --body '{"message":"hello"}'
 ```
 
-### 示例 6：查询快递物流（需先配置快递100 密钥）
-
-```bash
-# 自动识别公司并查询轨迹
-<skill-directory>/scripts/express_query.sh YT25569986666541
-
-# 顺丰（需手机后4位）
-<skill-directory>/scripts/express_query.sh SF1356245698123 sf 1234
-```
-
-返回该单号的公司、当前状态与完整物流轨迹（最新在前）。
-
-### 示例 7：新增预设接口
+### 示例 6：新增预设接口
 
 编辑 `<skill-directory>/scripts/config.json`，添加新条目：
 
