@@ -1,7 +1,7 @@
 ---
 name: api-query
-description: "通用接口查询工具 - 调用各类平台开放接口发送 HTTP 请求并返回数据。支持 GET/POST/PUT/DELETE/PATCH 方法，支持 API Key 鉴权，支持预设配置和命令行动态传参。全平台适配：Android 15/Termux/WorkBuddy、Linux、macOS、Windows（原生+WSL+Git Bash）、iPhone（a-Shell）。关键词：接口查询、API查询、调用接口、发送请求、HTTP请求、接口测试"
-version: "1.2.0"
+description: "通用接口查询工具 - 调用各类平台开放接口发送 HTTP 请求并返回数据。支持 GET/POST/PUT/DELETE/PATCH 方法，支持 API Key 鉴权，支持预设配置和命令行动态传参。内置快递100 快递单号轨迹查询（自动识别快递公司）。全平台适配：Android 15/Termux/WorkBuddy、Linux、macOS、Windows（原生+WSL+Git Bash）、iPhone（a-Shell）。关键词：接口查询、API查询、调用接口、发送请求、HTTP请求、接口测试、快递查询、查快递、快递单号、物流轨迹"
+version: "1.3.0"
 author: "CodeBuddy AI"
 created: "2026-08-21"
 updated: "2026-08-22"
@@ -27,12 +27,12 @@ updated: "2026-08-22"
 
 | 平台 | 查询脚本 | 密钥管理 | 说明 |
 |------|---------|---------|------|
-| **Android**（Termux/WorkBuddy，安卓 15） | `query_api.sh` | `set_key.sh` | bash 版，toybox 兼容 |
-| **Linux**（服务器/桌面） | `query_api.sh` | `set_key.sh` | bash 版，开箱即用 |
-| **macOS**（Intel/Apple Silicon） | `query_api.sh` | `set_key.sh` | bash 3.2 兼容（无需装新版 bash） |
-| **Windows - WSL / Git Bash** | `query_api.sh` | `set_key.sh` | bash 版，WSL/Git for Windows 自带环境 |
-| **Windows 原生**（PowerShell/CMD） | `python query_api.py` | `python set_key.py` | Python 3.6+，无需 bash |
-| **iPhone**（a-Shell 等） | `python3 query_api.py` | `python3 set_key.py` | App Store 装 a-Shell 即可用 |
+| **Android**（Termux/WorkBuddy，安卓 15） | `query_api.sh` / `express_query.sh` | `set_key.sh` | bash 版，toybox 兼容 |
+| **Linux**（服务器/桌面） | `query_api.sh` / `express_query.sh` | `set_key.sh` | bash 版，开箱即用 |
+| **macOS**（Intel/Apple Silicon） | `query_api.sh` / `express_query.sh` | `set_key.sh` | bash 3.2 兼容（无需装新版 bash） |
+| **Windows - WSL / Git Bash** | `query_api.sh` / `express_query.sh` | `set_key.sh` | bash 版，WSL/Git for Windows 自带环境 |
+| **Windows 原生**（PowerShell/CMD） | `python query_api.py` / `python express_query.py` | `python set_key.py` | Python 3.6+，无需 bash |
+| **iPhone**（a-Shell 等） | `python3 query_api.py` / `python3 express_query.py` | `python3 set_key.py` | App Store 装 a-Shell 即可用 |
 
 **依赖要求：**
 - bash 版：`bash 3.2+` + `curl` + `python3`（Android Termux: `pkg install curl python`）
@@ -69,6 +69,7 @@ python3 ~/skills/api-query/scripts/query_api.py --preset weather
 - 用户需要调用某个平台的开放 API 获取数据
 - 用户需要发送 HTTP 请求测试接口
 - 用户需要查询天气、汇率、IP 信息等公开 API
+- 用户需要查询快递单号物流轨迹（"查快递""快递到哪了""物流信息"）
 - 用户提到"调用接口""查 API""发请求""接口测试"等关键词
 - 用户需要配置 API Key 并用其访问需要鉴权的接口
 
@@ -94,6 +95,8 @@ python3 ~/skills/api-query/scripts/query_api.py --preset weather
 所有脚本路径基于此目录：
 - 核心查询脚本（bash）：`<skill-directory>/scripts/query_api.sh`
 - 核心查询脚本（Python）：`<skill-directory>/scripts/query_api.py`
+- 快递查询脚本（bash）：`<skill-directory>/scripts/express_query.sh`
+- 快递查询脚本（Python）：`<skill-directory>/scripts/express_query.py`
 - 密钥管理（bash）：`<skill-directory>/scripts/set_key.sh`
 - 密钥管理（Python）：`<skill-directory>/scripts/set_key.py`
 - 预设配置文件：`<skill-directory>/scripts/config.json`
@@ -201,6 +204,56 @@ python3 ~/skills/api-query/scripts/query_api.py --preset weather
 <skill-directory>/scripts/query_api.sh --preset weather --raw
 ```
 
+### 3. 快递查询（express_query.sh / express_query.py）— v1.3.0+
+
+基于**快递100**开放平台的快递轨迹查询，支持 1200+ 国内外快递公司（顺丰/圆通/中通/申通/韵达/EMS/京东/德邦/极兔等），**自动识别单号所属快递公司**。
+
+> 因快递100 要求动态 MD5 签名（`sign = MD5(param + key + customer)`），无法用静态预设表达，故提供专用脚本，内部自动完成签名计算。
+
+#### 首次使用前（一次性配置）
+
+1. **注册**：https://api.kuaidi100.com/register（免费，个人可注册企业版）
+2. **取密钥**：登录后进入「企业管理后台 → 我的信息 → 企业信息」，复制 **Customer** 和 **授权 Key**
+3. **配置密钥**：
+
+```bash
+# bash 版（Linux/macOS/Android/WSL）
+<skill-directory>/scripts/set_key.sh set KUAIDI100_CUSTOMER <你的Customer>
+<skill-directory>/scripts/set_key.sh set KUAIDI100_KEY      <你的授权Key>
+
+# Python 版（Windows 原生/iPhone）
+python <skill-directory>\scripts\set_key.py set KUAIDI100_CUSTOMER <你的Customer>
+python <skill-directory>\scripts\set_key.py set KUAIDI100_KEY      <你的授权Key>
+```
+
+#### 查询用法
+
+```bash
+# 自动识别快递公司（最常用，只填单号）
+<skill-directory>/scripts/express_query.sh YT25569986666541
+
+# 指定快递公司编码（识别不准时）
+<skill-directory>/scripts/express_query.sh SF1356245698123 sf
+
+# 顺丰/中通需要手机号校验（收/寄件人手机后4位）
+<skill-directory>/scripts/express_query.sh SF1356245698123 sf 1234
+
+# 查看常用快递公司编码表
+<skill-directory>/scripts/express_query.sh --com
+```
+
+输出为人类可读的物流轨迹（最新一条标注 `●最新`），包含公司、单号、当前状态（在途/派件/签收等）与完整轨迹时间线。
+
+#### 常用快递公司编码
+
+`sf` 顺丰 · `yto` 圆通 · `zto` 中通 · `sto` 申通 · `yunda` 韵达 · `ems` EMS · `jd` 京东 · `deppon` 德邦 · `htky` 百世 · `jtexpress` 极兔（完整表：`--com` 或快递100 官网下载）
+
+#### 注意事项
+
+- 同一单号查询频率请间隔 **30 分钟以上**，否则可能被锁单
+- 顺丰速运、顺丰快运、中通快递查询**必填**收/寄件人手机号（后4位即可）
+- 错误码自动翻译为中文提示（如 503 签名失败、601 Key 过期等）
+
 ## 示例
 
 ### 示例 1：查询天气（免费接口，无需 Key）
@@ -261,7 +314,19 @@ python3 ~/skills/api-query/scripts/query_api.py --preset weather
   --body '{"message":"hello"}'
 ```
 
-### 示例 6：新增预设接口
+### 示例 6：查询快递物流（需先配置快递100 密钥）
+
+```bash
+# 自动识别公司并查询轨迹
+<skill-directory>/scripts/express_query.sh YT25569986666541
+
+# 顺丰（需手机后4位）
+<skill-directory>/scripts/express_query.sh SF1356245698123 sf 1234
+```
+
+返回该单号的公司、当前状态与完整物流轨迹（最新在前）。
+
+### 示例 7：新增预设接口
 
 编辑 `<skill-directory>/scripts/config.json`，添加新条目：
 
